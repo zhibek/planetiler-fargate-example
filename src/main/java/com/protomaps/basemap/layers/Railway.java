@@ -3,6 +3,7 @@ package com.protomaps.basemap.layers;
 import com.onthegomap.planetiler.FeatureCollector;
 import com.onthegomap.planetiler.ForwardingProfile;
 import com.onthegomap.planetiler.VectorTile;
+import com.onthegomap.planetiler.geo.GeometryException;
 import com.onthegomap.planetiler.reader.SourceFeature;
 import com.onthegomap.planetiler.util.Parse;
 import com.protomaps.basemap.feature.FeatureId;
@@ -18,7 +19,6 @@ public class Railway implements ForwardingProfile.FeatureProcessor, ForwardingPr
 
   @Override
   public void processFeature(SourceFeature sf, FeatureCollector features) {
-    // todo: exclude railway stations, levels
     if (sf.canBeLine() && sf.hasTag("railway")) {
 
       String kind = "rail";
@@ -54,6 +54,7 @@ public class Railway implements ForwardingProfile.FeatureProcessor, ForwardingPr
         .setAttr("highspeed", sf.getString("highspeed"))
         .setAttr("railway", sf.getString("railway"))
 
+        .setMinPixelSize(0)        
         .setZoomRange(minZoom, 15);
 
       // Core Tilezen schema properties
@@ -81,7 +82,19 @@ public class Railway implements ForwardingProfile.FeatureProcessor, ForwardingPr
   }
 
   @Override
-  public List<VectorTile.Feature> postProcess(int zoom, List<VectorTile.Feature> items) {
+  public List<VectorTile.Feature> postProcess(int zoom, List<VectorTile.Feature> items) throws GeometryException {
+    for (var item : items) {
+      if (!item.attrs().containsKey("pmap:level")) {
+        item.attrs().put("pmap:level", 0);
+      }
+    }
+
+    items = FeatureMerge.mergeLineStrings(items,
+      0.5, // after merging, remove lines that are still less than 0.5px long
+      0.1, // simplify output linestrings using a 0.1px tolerance
+      4 // remove any detail more than 4px outside the tile boundary
+    );
+
     return items;
   }
 }
