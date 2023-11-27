@@ -14,7 +14,7 @@ BUCKET="${BUCKET:=}"
 # Execute Planetiler
 echo "** Running Planetiler..."
 java -Xmx6g \
-  -cp @/app/jib-classpath-file com.onthegomap.planetiler.Main \
+  -jar ./target/*-with-deps.jar \
   --download \
   --area=${AREA} \
   --output=${AREA}.pmtiles

@@ -1,4 +1,4 @@
-FROM ghcr.io/onthegomap/planetiler:latest
+FROM maven:3.9.5
 
 # Install AWS cli
 RUN apt update \
@@ -14,7 +14,10 @@ RUN apt update \
 WORKDIR /workspace
 
 # Copy local code to the container image.
-COPY run.sh .
+COPY . .
+
+# Build app
+RUN mvn clean package
 
 # Ensure the script is executable
 RUN chmod +x ./run.sh
