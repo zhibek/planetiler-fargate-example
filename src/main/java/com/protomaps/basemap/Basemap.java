@@ -5,17 +5,13 @@ import com.onthegomap.planetiler.Planetiler;
 import com.onthegomap.planetiler.config.Arguments;
 import com.onthegomap.planetiler.util.Downloader;
 import com.protomaps.basemap.feature.NaturalEarthDb;
-import com.protomaps.basemap.feature.QrankDb;
 import com.protomaps.basemap.layers.Boundaries;
-import com.protomaps.basemap.layers.Buildings;
 import com.protomaps.basemap.layers.Earth;
 import com.protomaps.basemap.layers.Landuse;
 import com.protomaps.basemap.layers.Natural;
 import com.protomaps.basemap.layers.PhysicalLine;
 import com.protomaps.basemap.layers.PhysicalPoint;
 import com.protomaps.basemap.layers.Places;
-import com.protomaps.basemap.layers.Pois;
-import com.protomaps.basemap.layers.Roads;
 import com.protomaps.basemap.layers.Transit;
 import com.protomaps.basemap.layers.Water;
 import java.nio.file.Path;
@@ -23,16 +19,12 @@ import java.nio.file.Path;
 
 public class Basemap extends ForwardingProfile {
 
-  public Basemap(NaturalEarthDb naturalEarthDb, QrankDb qrankDb) {
+  public Basemap(NaturalEarthDb naturalEarthDb) {
 
     var admin = new Boundaries();
     registerHandler(admin);
     registerSourceHandler("osm", admin);
     registerSourceHandler("ne", admin::processNe);
-
-    var buildings = new Buildings();
-    registerHandler(buildings);
-    registerSourceHandler("osm", buildings);
 
     var landuse = new Landuse();
     registerHandler(landuse);
@@ -55,14 +47,6 @@ public class Basemap extends ForwardingProfile {
     registerHandler(place);
     registerSourceHandler("osm", place);
     registerSourceHandler("ne", place::processNe);
-
-    var poi = new Pois(qrankDb);
-    registerHandler(poi);
-    registerSourceHandler("osm", poi);
-
-    var roads = new Roads();
-    registerHandler(roads);
-    registerSourceHandler("osm", roads);
 
     var transit = new Transit();
     registerHandler(transit);
@@ -130,14 +114,17 @@ public class Basemap extends ForwardingProfile {
       .addShapefileSource("osm_land", sourcesDir.resolve("land-polygons-split-3857.zip"),
         "https://osmdata.openstreetmap.de/download/land-polygons-split-3857.zip");
 
-    Downloader.create(planetiler.config()).add("ne", neUrl, nePath)
-      .add("qrank", "https://qrank.wmcloud.org/download/qrank.csv.gz", sourcesDir.resolve("qrank.csv.gz")).run();
+    Downloader
+      .create(planetiler.config())
+      .add("ne", neUrl, nePath)
+      .run();
 
     var tmpDir = nePath.resolveSibling(nePath.getFileName() + "-unzipped");
     var naturalEarthDb = NaturalEarthDb.fromSqlite(nePath, tmpDir);
-    var qrankDb = QrankDb.fromCsv(sourcesDir.resolve("qrank.csv.gz"));
 
-    planetiler.setProfile(new Basemap(naturalEarthDb, qrankDb)).setOutput(Path.of(area + ".pmtiles"))
+    planetiler
+      .setProfile(new Basemap(naturalEarthDb))
+      .setOutput(Path.of(area + ".pmtiles"))
       .run();
   }
 }
