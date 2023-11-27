@@ -12,18 +12,7 @@ public class LinkSimplify {
   private LinkSimplify() {}
 
   /**
-   * Post-processing to remove "hairballs" from road networks.
-   * <p>
-   * OpenStreetMap uses the highway=motorway_link tag to connect motorways to motorways, as well as connect motorways to
-   * lower-class highway features. If we include all ways at all zooms, motorways will grow "hairballs" once the
-   * lower-class features are generalized away.
-   * <p>
-   * LinkSimplify uses some very basic heuristics to distinguish "connectors" and "offramps": If a link way's 2
-   * endpoints both touch (a motorway at any point | another link at an endpoint), keep it. (we're not guaranteed
-   * connectors are a single way, it can be multiple) Otherwise throw it away (an offramp)
-   * <p>
-   * The above logic generalizes to any passed tag, not just highway=motorway | motorway_link.
-   * </p>
+   * Post-processing to remove "complexity" from lines.
    */
   public static List<VectorTile.Feature> linkSimplify(List<VectorTile.Feature> items, String key, String mainval,
     String linkval) throws GeometryException {

@@ -12,7 +12,7 @@ import com.protomaps.basemap.layers.Natural;
 import com.protomaps.basemap.layers.PhysicalLine;
 import com.protomaps.basemap.layers.PhysicalPoint;
 import com.protomaps.basemap.layers.Places;
-import com.protomaps.basemap.layers.Transit;
+import com.protomaps.basemap.layers.Railway;
 import com.protomaps.basemap.layers.Water;
 import java.nio.file.Path;
 
@@ -48,9 +48,9 @@ public class Basemap extends ForwardingProfile {
     registerSourceHandler("osm", place);
     registerSourceHandler("ne", place::processNe);
 
-    var transit = new Transit();
-    registerHandler(transit);
-    registerSourceHandler("osm", transit);
+    var railway = new Railway();
+    registerHandler(railway);
+    registerSourceHandler("osm", railway);
 
     var water = new Water();
     registerHandler(water);

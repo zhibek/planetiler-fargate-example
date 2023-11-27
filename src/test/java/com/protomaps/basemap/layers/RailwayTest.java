@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
-class TransitTest extends LayerTest {
+class RailwayTest extends LayerTest {
   @Test
   void simple() {
     assertFeatures(12,

@@ -9,69 +9,33 @@ import com.protomaps.basemap.feature.FeatureId;
 import com.protomaps.basemap.names.OsmNames;
 import java.util.List;
 
-public class Transit implements ForwardingProfile.FeatureProcessor, ForwardingProfile.FeaturePostProcessor {
+public class Railway implements ForwardingProfile.FeatureProcessor, ForwardingProfile.FeaturePostProcessor {
 
   @Override
   public String name() {
-    return "transit";
+    return "railway";
   }
 
   @Override
   public void processFeature(SourceFeature sf, FeatureCollector features) {
     // todo: exclude railway stations, levels
-    if (sf.canBeLine() && (sf.hasTag("railway") ||
-      sf.hasTag("aerialway", "cable_car") ||
-      sf.hasTag("man_made", "pier") ||
-      sf.hasTag("route", "ferry") ||
-      sf.hasTag("aeroway", "runway", "taxiway")) &&
-      (!sf.hasTag("railway", "abandoned", "razed", "demolished", "removed", "construction", "platform", "proposed"))) {
+    if (sf.canBeLine() && sf.hasTag("railway")) {
 
-      int minZoom = 11;
+      String kind = "rail";
+      String kindDetail = sf.getString("railway");
 
-      if (sf.hasTag("aeroway", "runway")) {
+      int minZoom = 3;
+
+      if (sf.hasTag("railway", "funicular", "light_rail", "miniature", "monorail", "narrow_gauge", "preserved", "subway", "tram")) {
         minZoom = 9;
-      } else if (sf.hasTag("aeroway", "taxiway")) {
-        minZoom = 10;
-      } else if (sf.hasTag("service", "yard", "siding", "crossover")) {
-        minZoom = 13;
-      } else if (sf.hasTag("man_made", "pier")) {
-        minZoom = 13;
       }
 
-      String kind = "other";
-      String kindDetail = "";
-      if (sf.hasTag("aeroway")) {
-        kind = "aeroway";
-        kindDetail = sf.getString("aeroway");
-      } else if (sf.hasTag("railway", "disused", "funicular", "light_rail", "miniature", "monorail", "narrow_gauge",
-        "preserved", "subway", "tram")) {
-        kind = "rail";
-        kindDetail = sf.getString("railway");
-        minZoom = 14;
+      if (sf.hasTag("railway", "abandoned", "razed", "demolished", "removed", "construction", "platform", "proposed")) {
+        minZoom = 12;
+      }
 
-        if (sf.hasTag("railway", "disused")) {
-          minZoom = 15;
-        }
-      } else if (sf.hasTag("railway")) {
-        kind = "rail";
-        kindDetail = sf.getString("railway");
-
-        if (kindDetail.equals("service")) {
-          minZoom = 13;
-
-          // eg a rail yard
-          if (sf.hasTag("service")) {
-            minZoom = 14;
-          }
-        }
-      } else if (sf.hasTag("ferry")) {
-        kind = "ferry";
-        kindDetail = sf.getString("ferry");
-      } else if (sf.hasTag("man_made", "pier")) {
-        kind = "pier";
-      } else if (sf.hasTag("aerialway")) {
-        kind = "aerialway";
-        kindDetail = sf.getString("aerialway");
+      if (sf.hasTag("service", "yard", "siding", "crossover")) {
+        minZoom = 12;
       }
 
       var feature = features.line(this.name())
@@ -86,13 +50,10 @@ public class Transit implements ForwardingProfile.FeatureProcessor, ForwardingPr
         .setAttr("ref", sf.getString("ref"))
         .setAttr("route", sf.getString("route"))
         .setAttr("service", sf.getString("service"))
-        // DEPRECATION WARNING: Marked for deprecation in v4 schema, do not use these for styling
-        //                      If an explicate value is needed it should bea kind, or included in kind_detail
-        .setAttr("aerialway", sf.getString("aerialway"))
-        .setAttr("aeroway", sf.getString("aeroway"))
+
         .setAttr("highspeed", sf.getString("highspeed"))
-        .setAttr("man_made", sf.getString("pier"))
         .setAttr("railway", sf.getString("railway"))
+
         .setZoomRange(minZoom, 15);
 
       // Core Tilezen schema properties
@@ -109,11 +70,6 @@ public class Transit implements ForwardingProfile.FeatureProcessor, ForwardingPr
         feature.setAttr("pmap:level", -1);
       } else {
         feature.setAttr("pmap:level", 0);
-      }
-
-      // Too many small pier lines otherwise
-      if (kind.equals("pier")) {
-        feature.setMinPixelSize(2);
       }
 
       // Server sort features so client label collisions are pre-sorted
