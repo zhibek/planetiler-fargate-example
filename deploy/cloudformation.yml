@@ -6,6 +6,29 @@ Parameters:
   ContainerImage:
     Type: String
 Resources:
+  AssetBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Ref 'AWS::StackName'
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+  AssetBucketPolicy:
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref AssetBucket
+      PolicyDocument:
+        Statement:
+          - Action: 's3:*'
+            Effect: Deny
+            Principal: '*'
+            Resource:
+              - !Join [ '', ['arn:', !Ref 'AWS::Partition', ':s3:::', !Ref AssetBucket, '/*'] ]
+              - !Join [ '', ['arn:', !Ref 'AWS::Partition', ':s3:::', !Ref AssetBucket] ]
+            Condition:
+              Bool:
+                'aws:SecureTransport': false
   ContainerRepository:
     Type: AWS::ECR::Repository
     Properties: 
@@ -53,9 +76,25 @@ Resources:
             Principal:
               Service:
                 - ecs-tasks.amazonaws.com
+                - s3.amazonaws.com
             Action:
               - 'sts:AssumeRole'
-      Policies: []
+      Policies:
+        - PolicyName: AssetBucketObjectsWrite
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:GetObjectAcl
+                  - s3:PutObject
+                  - s3:PutObjectAcl
+                Resource:
+                  - 'arn:aws:s3:::*'
+                  - 'arn:aws:s3:::*/*'
+                  - !Join [ '', ['arn:aws:s3:::', !Ref AssetBucket] ]
+                  - !Join [ '', ['arn:aws:s3:::', !Ref AssetBucket, '/*'] ]
       ManagedPolicyArns: []
       Tags: []
   FargateTask:
@@ -64,7 +103,11 @@ Resources:
       ContainerDefinitions:
         - Name: !Ref TaskName
           Image: !Ref ContainerImage
-          Environment: []
+          Environment:
+            - Name: BUCKET
+              Value: !Ref 'AWS::StackName'
+            - Name: AREA
+              Value: monaco
           EntryPoint: []
           Command: []
           LogConfiguration:
@@ -79,9 +122,11 @@ Resources:
       TaskRoleArn: !Ref FargateIamTaskRole
       RequiresCompatibilities:
         - FARGATE
-      Memory: 0.5GB
-      Cpu: 256
+      Memory: 8GB
+      Cpu: 4096
       Tags: []
 Outputs:
+  AssetBucketName:
+    Value: !Ref AssetBucket
   FargateTaskArn:
     Value: !Ref FargateTask
