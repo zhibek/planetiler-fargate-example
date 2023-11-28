@@ -15,9 +15,13 @@ import com.protomaps.basemap.layers.Places;
 import com.protomaps.basemap.layers.Railway;
 import com.protomaps.basemap.layers.Water;
 import java.nio.file.Path;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class Basemap extends ForwardingProfile {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(Basemap.class);
 
   public Basemap(NaturalEarthDb naturalEarthDb) {
 
@@ -97,6 +101,11 @@ public class Basemap extends ForwardingProfile {
 
   static void run(Arguments args) throws Exception {
     args = args.orElse(Arguments.of("maxzoom", 15));
+
+    if (args.getBoolean("check", "Check application is valid", false) == true) {
+      LOGGER.info("Check complete!");
+      return;
+    };
 
     Path dataDir = Path.of("data");
     Path sourcesDir = dataDir.resolve("sources");
